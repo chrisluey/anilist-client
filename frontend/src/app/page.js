@@ -1,18 +1,19 @@
-'use client'; // This allows the use of hooks
+// src/app/page.js
+'use client';
 
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 export default function Home() {
   const [user1, setUser1] = useState('');
   const [user2, setUser2] = useState('');
-  const [comparisonData, setComparisonData] = useState(null);
+  const [sharedAnime, setSharedAnime] = useState([]);
 
   const compareLists = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:5000/compare', { user1, user2 });
-      setComparisonData(response.data);
+      setSharedAnime(response.data.sharedAnime);
     } catch (error) {
       console.error("Error comparing lists:", error);
     }
@@ -20,7 +21,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1>Compare Anime Lists</h1>
+      <h1>Compare Shared Anime Scores</h1>
       <form onSubmit={compareLists}>
         <input
           type="text"
@@ -39,25 +40,27 @@ export default function Home() {
         <button type="submit">Compare</button>
       </form>
 
-      {comparisonData && (
+      {sharedAnime.length > 0 && (
         <div>
-          <h2>Comparison Results:</h2>
-          <h3>User 1's List:</h3>
-          <ul>
-            {comparisonData.user1List.map((item, index) => (
-              <li key={index}>
-                {item.media.title.romaji} - Score: {item.score}
-              </li>
-            ))}
-          </ul>
-          <h3>User 2's List:</h3>
-          <ul>
-            {comparisonData.user2List.map((item, index) => (
-              <li key={index}>
-                {item.media.title.romaji} - Score: {item.score}
-              </li>
-            ))}
-          </ul>
+          <h2>Shared Anime with Scores</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Anime Title</th>
+                <th>{user1}'s Score</th>
+                <th>{user2}'s Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sharedAnime.map((anime, index) => (
+                <tr key={index}>
+                  <td>{anime.title}</td>
+                  <td>{anime.user1Score}</td>
+                  <td>{anime.user2Score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

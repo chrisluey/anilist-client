@@ -1,74 +1,65 @@
 // server.js
 const express = require('express');
-const cors = require('cors');
 const axios = require('axios');
-require('dotenv').config();
+const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 app.use(cors());
 app.use(express.json());
 
-// Basic route
-app.get('/', (req, res) => {
-  res.send('Anime List Comparison API');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
-
-
-// Route to compare two users' anime lists
 app.post('/compare', async (req, res) => {
   const { user1, user2 } = req.body;
 
-  try {
-    const query = `
-      query ($user1: String!, $user2: String!) {
-        user1: MediaListCollection(userName: $user1, type: ANIME) {
-          lists {
-            entries {
-              media {
-                title {
-                  romaji
-                }
-                averageScore
+  const query = `
+    query ($username: String) {
+      MediaListCollection(userName: $username, type: ANIME) {
+        lists {
+          entries {
+            media {
+              id
+              title {
+                romaji
               }
-              score
             }
-          }
-        }
-        user2: MediaListCollection(userName: $user2, type: ANIME) {
-          lists {
-            entries {
-              media {
-                title {
-                  romaji
-                }
-                averageScore
-              }
-              score
-            }
+            score
+            status
           }
         }
       }
-    `;
+    }
+  `;
 
-    const response = await axios.post('https://graphql.anilist.co', {
-      query,
-      variables: { user1, user2 },
-    });
+  try {
+    const [user1Data, user2Data] = await Promise.all([
+      axios.post('https://graphql.anilist.co', { query, variables: { username: user1 } }),
+      axios.post('https://graphql.anilist.co', { query, variables: { username: user2 } }),
+    ]);
 
-    const user1List = response.data.data.user1.lists[0].entries;
-    const user2List = response.data.data.user2.lists[0].entries;
+    const user1List = user1Data.data.data.MediaListCollection.lists.flatMap((list) => list.entries);
+    const user2List = user2Data.data.data.MediaListCollection.lists.flatMap((list) => list.entries);
 
-    // Logic to compare the lists will go here
+    // Filter user1's list for completed anime with a score > 0
+    const user1Map = new Map();
+    user1List
+      .filter((entry) => entry.status === 'COMPLETED' && entry.score > 0)
+      .forEach((entry) => {
+        user1Map.set(entry.media.id, { title: entry.media.title.romaji, score: entry.score });
+      });
 
-    res.json({ user1List, user2List });
+    // Filter user2's list for completed anime with a score > 0 and find shared entries
+    const sharedAnime = user2List
+      .filter((entry) => entry.status === 'COMPLETED' && entry.score > 0 && user1Map.has(entry.media.id))
+      .map((entry) => ({
+        title: entry.media.title.romaji,
+        user1Score: user1Map.get(entry.media.id).score,
+        user2Score: entry.score,
+      }));
+
+    res.json({ sharedAnime });
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching data from AniList API.' });
+    console.error("Error fetching data:", error);
+    res.status(500).json({ error: "Failed to fetch data" });
   }
 });
+
+app.listen(5000, () => console.log("Server running on http://localhost:5000"));
