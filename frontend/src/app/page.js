@@ -8,14 +8,18 @@ export default function Home() {
   const [user1, setUser1] = useState('');
   const [user2, setUser2] = useState('');
   const [sharedAnime, setSharedAnime] = useState([]);
+  const [error, setError] = useState(null);
 
   const compareLists = async (e) => {
     e.preventDefault();
+    setError(null);  // Reset previous errors
+
     try {
       const response = await axios.post('http://localhost:5000/compare', { user1, user2 });
       setSharedAnime(response.data.sharedAnime);
     } catch (error) {
-      console.error("Error comparing lists:", error);
+      console.log(error);
+      setError(error.response?.data?.error || "Error comparing lists");
     }
   };
 
@@ -39,6 +43,8 @@ export default function Home() {
         />
         <button type="submit">Compare</button>
       </form>
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {sharedAnime.length > 0 && (
         <div>
