@@ -1,41 +1,53 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';  // Use 'next/navigation' in the app directory
+import { useRouter } from 'next/navigation';
 
 export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchToken = async () => {
-      const code = new URLSearchParams(window.location.search).get('code');
-      if (code) {
-        try {
-          // Send the authorization code to the backend, NOT AniList
-          const response = await fetch('http://localhost:5000/exchange-token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ code }), // Send the authorization code to the backend
-          });
-  
-          const data = await response.json();
-          if (data.sessionToken) {
-            // Store the session token securely
-            localStorage.setItem('sessionToken', data.sessionToken);
-            router.push('/'); // Redirect to home page after login
-          } else {
-            console.error('Failed to fetch session token');
-          }
-        } catch (error) {
-          console.error('Error exchanging code for token', error);
+    // Get token from URL fragment (#)
+    const fragment = window.location.hash.substring(1);
+    const params = new URLSearchParams(fragment);
+    const accessToken = params.get('access_token');
+
+    if (accessToken) {
+      // Store token
+      localStorage.setItem('anilistToken', accessToken);
+      
+      // Fetch username with token
+      fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            query {
+              Viewer {
+                name
+              }
+            }
+          `
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.data?.Viewer?.name) {
+          localStorage.setItem('username', data.data.Viewer.name);
+          router.push('/');
         }
-      }
-    };
-    fetchToken();
+      })
+      .catch(err => {
+        console.error('Error fetching username:', err);
+        router.push('/');
+      });
+    } else {
+      router.push('/');
+    }
   }, [router]);
-  
 
   return <div>Logging in...</div>;
 }

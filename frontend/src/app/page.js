@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';  // Import from next/navigation for Next.js App Router
+import { useRouter } from 'next/navigation'; // Use 'next/navigation' in the app directory
 
 export default function Home() {
   const [user1, setUser1] = useState('');
@@ -18,48 +18,52 @@ export default function Home() {
 
   const router = useRouter();  // Use next/navigation for App Router
 
-  // Use effect to make sure router and other hooks are used only on the client-side
+  // Check if the user is logged in using sessionToken in localStorage
   useEffect(() => {
     setIsMounted(true);  // Mark that the component has been mounted
   }, []);
 
-  // Check if the user is logged in using sessionToken in localStorage
+  // Check the URL hash for the access token on page load
   useEffect(() => {
-    if (isMounted) {  // Only execute this after the component has mounted
-      const sessionToken = localStorage.getItem('sessionToken');
-      if (sessionToken) {
-        setLoggedIn(true);
+    if (isMounted) {
+      const hash = window.location.hash;
+      const token = new URLSearchParams(hash).get('access_token');
+      const storedUsername = localStorage.getItem('username');  // Get the username from localStorage
 
-        // Optionally, you can fetch the username associated with the session token here
-        // (Assuming you have an endpoint that can fetch the username by token)
-        axios
-          .get('http://localhost:5000/get-username', { headers: { Authorization: `Bearer ${sessionToken}` } })
-          .then((response) => {
-            setUsername(response.data.username);
-          })
-          .catch((error) => {
-            console.error('Error fetching username:', error);
-            setLoggedIn(false); // If there’s an issue with fetching username, consider logging out the user.
-          });
+      if (token) {
+        // Store the token and username in localStorage
+        localStorage.setItem('sessionToken', token);
+
+        // Optionally, you can fetch the username here if needed (using the token)
+        // For now, we'll assume the username comes with the token (if not, you could make a request here).
+        localStorage.setItem('username', 'Username');  // Replace with actual username from API response if available
+
+        setLoggedIn(true);
+        setUsername('Username');  // Replace with the actual username fetched
+        window.location.hash = ''; // Clear the hash from the URL after storing the token
+      } else if (storedUsername) {
+        // If already logged in, fetch username from localStorage
+        setLoggedIn(true);
+        setUsername(storedUsername);
       }
     }
   }, [isMounted]);
 
-  // Redirect to AniList login page
+  // Handle login redirection (Implicit Grant)
   const login = () => {
-    const clientID = '22306'; // Replace with your actual AniList client ID
-    const redirectURI = 'http://localhost:3000/callback'; // Replace with your redirect URI
+    const clientID = '22306';  // Replace with your actual AniList client ID
+    // const redirectURI = 'http://localhost:3000'; // Redirect URI where you'll handle the login
 
-    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${clientID}&redirect_uri=${redirectURI}&response_type=code&scope=read`;
+    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${clientID}&response_type=token`;
 
-    window.location.href = authUrl; // Redirect to AniList login page
+    window.location.href = authUrl;  // Redirect to AniList login page
   };
 
   // Handle form submission for comparing anime lists
   const compareLists = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);  // Reset previous errors
+    setError(null);
 
     try {
       const response = await axios.post('http://localhost:5000/compare', { user1, user2 });
@@ -68,72 +72,110 @@ export default function Home() {
       setUser2Name(user2);
     } catch (error) {
       console.log(error);
-      setError(error.response?.data?.error || "Error comparing lists");
+      setError(error.response?.data?.error || 'Error comparing lists');
     } finally {
       setLoading(false);
     }
   };
 
+  // Reset state and go back to the home page
+  const resetPage = () => {
+    setSharedAnime([]);
+    setUser1('');
+    setUser2('');
+    setUser1Name('');
+    setUser2Name('');
+    setError(null);
+    setLoading(false);
+  };
+
   return (
-    <div>
-      <header style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <h1>Compare Shared Anime Scores</h1>
-        <div>
-          {loggedIn ? (
-            <span>Welcome, {username}</span>  // Display username when logged in
-          ) : (
-            <button onClick={login}>Login with AniList</button>  // Login button
-          )}
-        </div>
-      </header>
+    <div className="relative min-h-screen bg-cover bg-center" style={{ backgroundImage: 'url(/path-to-your-anime-montage.jpg)' }}>
+      <div className="absolute inset-0 bg-black opacity-50" />
+      
+      {/* Login button/welcome message in the top-right corner */}
+      <div className="absolute top-4 right-4 z-20">
+        {loggedIn ? (
+          <div className="text-lg text-white">
+            Welcome, {username}
+          </div>
+        ) : (
+          <button
+            onClick={login}
+            className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Login with AniList
+          </button>
+        )}
+      </div>
 
-      <form onSubmit={compareLists}>
-        <input
-          type="text"
-          placeholder="User 1"
-          value={user1}
-          onChange={(e) => setUser1(e.target.value)}
-          required
-          className="text-gray-800"
-        />
-        <input
-          type="text"
-          placeholder="User 2"
-          value={user2}
-          onChange={(e) => setUser2(e.target.value)}
-          required
-          className="text-gray-800"
-        />
-        <button type="submit">Compare</button>
-      </form>
+      {/* Main Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-white">
+        {/* Title: Clickable to reset and return to home */}
+        <h1 
+          className="text-4xl font-bold mb-6 cursor-pointer"
+          onClick={resetPage}  // Reset page when clicked
+        >
+          AniList Comparator
+        </h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+        {(
+          <form onSubmit={compareLists} className="flex flex-col items-center space-y-4">
+            <input
+              type="text"
+              placeholder="User 1"
+              value={user1}
+              onChange={(e) => setUser1(e.target.value)}
+              required
+              className="p-2 rounded-lg w-64 text-black"
+            />
+            <input
+              type="text"
+              placeholder="User 2"
+              value={user2}
+              onChange={(e) => setUser2(e.target.value)}
+              required
+              className="p-2 rounded-lg w-64 text-black"
+            />
+            <button
+              type="submit"
+              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+            >
+              Compare
+            </button>
+          </form>
+        )}
 
-      {loading && <p>Loading...</p>}
+        {error && <p className="mt-4 text-red-500">{error}</p>}
 
-      {sharedAnime.length > 0 && (
-        <div>
-          <h2>Shared Anime with Scores</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Anime Title</th>
-                <th>{user1Name}'s Score</th>
-                <th>{user2Name}'s Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sharedAnime.map((anime, index) => (
-                <tr key={index}>
-                  <td>{anime.title}</td>
-                  <td>{anime.user1Score}</td>
-                  <td>{anime.user2Score}</td>
+        {loading && <p className="mt-4">Loading...</p>}
+
+        {sharedAnime.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl mb-4">Shared Anime with Scores</h2>
+            <table className="min-w-full text-left table-auto">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Anime Title</th>
+                  <th className="px-4 py-2">{user1Name}'s Score</th>
+                  <th className="px-4 py-2">{user2Name}'s Score</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {sharedAnime.map((anime, index) => (
+                  <tr key={index} className="border-t">
+                    <td className="px-4 py-2">{anime.title}</td>
+                    <td className="px-4 py-2">{anime.user1Score}</td>
+                    <td className="px-4 py-2">{anime.user2Score}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
+
+
 }

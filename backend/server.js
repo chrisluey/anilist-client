@@ -11,83 +11,83 @@ const clientID = '22306';
 const clientSecret = '1ETTHiQ9Ajim1Jv8Qzv0SDzgBbEL7B2FLkfMtOvB';
 const redirectURI = 'http://localhost:3000/callback';
 
-app.post('/exchange-token', async (req, res) => {
-  const { code } = req.body;
+// app.post('/exchange-token', async (req, res) => {
+//   const { code } = req.body;
 
-  try {
-    const response = await fetch('https://anilist.co/api/v2/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: clientID,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: redirectURI,
-        grant_type: 'authorization_code',
-      }),
-    });
+//   try {
+//     const response = await fetch('https://anilist.co/api/v2/oauth/token', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({
+//         client_id: clientID,
+//         client_secret: clientSecret,
+//         code,
+//         redirect_uri: redirectURI,
+//         grant_type: 'authorization_code',
+//       }),
+//     });
 
-    const data = await response.json();
+//     const data = await response.json();
 
-    if (data.access_token) {
-      // Store access token securely (e.g., in-memory, session store, etc.)
-      const sessionToken = generateSessionToken(); // Your method to generate a secure session token
+//     if (data.access_token) {
+//       // Store access token securely (e.g., in-memory, session store, etc.)
+//       const sessionToken = generateSessionToken(); // Your method to generate a secure session token
 
-      // Respond with the session token to the frontend
-      res.json({ sessionToken });
-    } else {
-      res.status(400).json({ error: 'Failed to get access token' });
-    }
-  } catch (error) {
-    console.error('Error exchanging code for token', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+//       // Respond with the session token to the frontend
+//       res.json({ sessionToken });
+//     } else {
+//       res.status(400).json({ error: 'Failed to get access token' });
+//     }
+//   } catch (error) {
+//     console.error('Error exchanging code for token', error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
 
-function generateSessionToken() {
-  // Implement JWT or session-based authentication
-  return 'your-session-token';
-}
+// function generateSessionToken() {
+//   // Implement JWT or session-based authentication
+//   return 'your-session-token';
+// }
 
-app.get('/get-username', async (req, res) => {
-  const token = req.headers['authorization']?.split(' ')[1];  // Get token from the Authorization header
+// app.get('/get-username', async (req, res) => {
+//   const token = req.headers['authorization']?.split(' ')[1];  // Get token from the Authorization header
   
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+//   if (!token) {
+//     return res.status(401).json({ error: 'Unauthorized' });
+//   }
 
-  try {
-    const response = await fetch('https://graphql.anilist.co', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: `
-          query {
-            Viewer {
-              name
-            }
-          }
-        `,
-      }),
-    });
+//   try {
+//     const response = await fetch('https://graphql.anilist.co', {
+//       method: 'POST',
+//       headers: {
+//         'Authorization': `Bearer ${token}`,
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({
+//         query: `
+//           query {
+//             Viewer {
+//               name
+//             }
+//           }
+//         `,
+//       }),
+//     });
 
-    const data = await response.json();
+//     const data = await response.json();
     
-    if (data?.data?.Viewer) {
-      res.json({ username: data.data.Viewer.name });
-    } else {
-      res.status(401).json({ error: 'Failed to fetch username' });
-    }
-  } catch (error) {
-    console.error('Error fetching username:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+//     if (data?.data?.Viewer) {
+//       res.json({ username: data.data.Viewer.name });
+//     } else {
+//       res.status(401).json({ error: 'Failed to fetch username' });
+//     }
+//   } catch (error) {
+//     console.error('Error fetching username:', error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
 
 // User validation query
 const userValidationQuery = `
