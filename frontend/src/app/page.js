@@ -108,50 +108,94 @@ export default function Home() {
           </button>
         )}
       </div>
-
+  
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-white">
-        {/* Title: Clickable to reset and return to home */}
-        <h1 
-          className="text-4xl font-bold mb-6 cursor-pointer"
-          onClick={resetPage}  // Reset page when clicked
-        >
-          AniList Comparator
-        </h1>
-
-        {(
-          <form onSubmit={compareLists} className="flex flex-col items-center space-y-4">
-            <input
-              type="text"
-              placeholder="User 1"
-              value={user1}
-              onChange={(e) => setUser1(e.target.value)}
-              required
-              className="p-2 rounded-lg w-64 text-black"
-            />
-            <input
-              type="text"
-              placeholder="User 2"
-              value={user2}
-              onChange={(e) => setUser2(e.target.value)}
-              required
-              className="p-2 rounded-lg w-64 text-black"
-            />
+        {/* Header with Title, Inputs, and Compare Button */}
+        {sharedAnime.length > 0 && (
+          <div className="fixed top-0 left-0 right-0 bg-black bg-opacity-75 p-4 flex items-center justify-start z-20 space-x-4">
+            <h1 
+              className="text-2xl font-bold text-white cursor-pointer"
+              onClick={resetPage}  // Reset page when clicked
+            >
+              AniList Comparator
+            </h1>
+            
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                placeholder="User 1"
+                value={user1}
+                onChange={(e) => setUser1(e.target.value)}
+                required
+                className="p-2 rounded-lg text-black"
+              />
+              <input
+                type="text"
+                placeholder="User 2"
+                value={user2}
+                onChange={(e) => setUser2(e.target.value)}
+                required
+                className="p-2 rounded-lg text-black"
+              />
+            </div>
+  
             <button
-              type="submit"
-              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+              onClick={compareLists}
+              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               Compare
             </button>
-          </form>
+          </div>
         )}
-
-        {error && <p className="mt-4 text-red-500">{error}</p>}
-
+  
+        {/* Centered Title, Input, and Button when No Shared Anime */}
+        {sharedAnime.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full w-full space-y-4">
+            <h1 
+              className="text-4xl font-bold text-white cursor-pointer"
+              onClick={resetPage}  // Reset page when clicked
+            >
+              AniList Comparator
+            </h1>
+  
+            <form onSubmit={compareLists} className="flex flex-col items-center space-y-4">
+              <input
+                type="text"
+                placeholder="User 1"
+                value={user1}
+                onChange={(e) => setUser1(e.target.value)}
+                required
+                className="p-2 rounded-lg w-64 text-black"
+              />
+              <input
+                type="text"
+                placeholder="User 2"
+                value={user2}
+                onChange={(e) => setUser2(e.target.value)}
+                required
+                className="p-2 rounded-lg w-64 text-black"
+              />
+              <button
+                type="submit"
+                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-4"
+              >
+                Compare
+              </button>
+            </form>
+          </div>
+        )}
+  
+        {error && (
+          <div className="fixed top-1/3 right-0 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50 animate-slide-in">
+            {error}
+          </div>
+        )}
+  
         {loading && <p className="mt-4">Loading...</p>}
-
+  
         {sharedAnime.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-20">
             <h2 className="text-2xl mb-4">Shared Anime with Scores</h2>
             <table className="min-w-full text-left table-auto">
               <thead>
