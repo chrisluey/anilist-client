@@ -89,6 +89,42 @@ export default function Home() {
     setLoading(false);
   };
 
+    // State to track sorting configuration
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+
+  // Sort the sharedAnime data
+  const sortedAnime = [...sharedAnime].sort((a, b) => {
+    if (!sortConfig.key) return 0; // If no sorting is applied
+
+    const aValue = sortConfig.key === 'averageScore' ? a[sortConfig.key] / 10 : a[sortConfig.key];
+    const bValue = sortConfig.key === 'averageScore' ? b[sortConfig.key] / 10 : b[sortConfig.key];
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'ascending' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'ascending' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  // Function to handle sorting when a column header is clicked
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Function to show a sorting indicator (optional)
+  const getSortIndicator = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === 'ascending' ? '▲' : '▼'; // Arrow up/down indicator
+    }
+    return '';
+  };
+
   return (
     <div className="relative min-h-screen bg-cover bg-center" style={{ backgroundImage: 'url(/path-to-your-anime-montage.jpg)' }}>
       <div className="absolute inset-0 bg-black opacity-50" />
@@ -200,17 +236,28 @@ export default function Home() {
             <table className="min-w-full text-left table-auto">
               <thead>
                 <tr>
-                  <th className="px-4 py-2">Anime Title</th>
-                  <th className="px-4 py-2">{user1Name}'s Score</th>
-                  <th className="px-4 py-2">{user2Name}'s Score</th>
+                  {/* Clickable headers for sorting */}
+                  <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('title')}>
+                    Anime Title {getSortIndicator('title')}
+                  </th>
+                  <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('user1Score')}>
+                    {user1Name}'s Score {getSortIndicator('user1Score')}
+                  </th>
+                  <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('user2Score')}>
+                    {user2Name}'s Score {getSortIndicator('user2Score')}
+                  </th>
+                  <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('averageScore')}>
+                    Overall Score (out of 10) {getSortIndicator('averageScore')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {sharedAnime.map((anime, index) => (
+                {sortedAnime.map((anime, index) => (
                   <tr key={index} className="border-t">
                     <td className="px-4 py-2">{anime.title}</td>
                     <td className="px-4 py-2">{anime.user1Score}</td>
                     <td className="px-4 py-2">{anime.user2Score}</td>
+                    <td className="px-4 py-2">{(anime.averageScore / 10).toFixed(1)}</td>
                   </tr>
                 ))}
               </tbody>

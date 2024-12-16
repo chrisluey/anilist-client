@@ -109,6 +109,7 @@ const animeListQuery = `
             title {
               romaji
             }
+            averageScore
           }
           score
           status
@@ -174,7 +175,7 @@ app.post('/compare', async (req, res) => {
       user1List
           .filter((entry) => entry.status === 'COMPLETED' && entry.score > 0)
           .forEach((entry) => {
-              user1Map.set(entry.media.id, { title: entry.media.title.romaji, score: entry.score });
+              user1Map.set(entry.media.id, { title: entry.media.title.romaji, score: entry.score,  averageScore: entry.media.averageScore });
           });
 
       // Find shared anime with scores
@@ -184,6 +185,7 @@ app.post('/compare', async (req, res) => {
               title: entry.media.title.romaji,
               user1Score: user1Map.get(entry.media.id).score,
               user2Score: entry.score,
+              averageScore: user1Map.get(entry.media.id).averageScore
           }));
 
       res.json({ sharedAnime });
